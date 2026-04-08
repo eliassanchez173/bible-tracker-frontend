@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-const API = ''
+const API = import.meta.env.VITE_API_URL || ''
 
 export default function Register({ onRegister, switchToLogin }) {
   const [username, setUsername] = useState('')

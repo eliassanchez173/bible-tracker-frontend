@@ -41,7 +41,7 @@ const TRANSLATIONS = [
   { label: 'American Standard Version', value: 'asv' }
 ]
 
-const API = ''
+const API = import.meta.env.VITE_API_URL || ''
 
 export default function BibleReader({ onLogged }) {
   const [book, setBook] = useState(BOOKS[0])

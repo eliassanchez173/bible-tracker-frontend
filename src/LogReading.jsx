@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-const API = ''
+const API = import.meta.env.VITE_API_URL || ''
 
 const BOOKS = [
   'Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy',

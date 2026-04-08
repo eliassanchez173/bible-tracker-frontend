@@ -2,7 +2,7 @@ import { useState } from 'react'
 import '../src/App.css'
 import { TextScramble } from '../src/TextScrable.jsx'
 
-const API = ''
+const API = import.meta.env.VITE_API_URL || ''
 
 export default function Login({ onLogin, switchToRegister }) {
   const [username, setUsername] = useState('')

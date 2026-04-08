@@ -8,7 +8,7 @@ import ProgressChart from './ProgressChart'
 import Navbar from './Navbar'
 import BibleReader from './BibleReader'
 
-const API = ''
+const API = import.meta.env.VITE_API_URL || ''
 
 export default function App() {
   const [user, setUser] = useState(localStorage.getItem('username'))
