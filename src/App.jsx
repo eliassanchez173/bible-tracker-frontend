@@ -7,6 +7,7 @@ import StreakDisplay from './StreakDisplay'
 import ProgressChart from './ProgressChart'
 import Navbar from './Navbar'
 import BibleReader from './BibleReader'
+import { getAuthHeaders, removeToken } from './auth'
 
 const API = import.meta.env.VITE_API_URL || ''
 
@@ -18,7 +19,7 @@ export default function App() {
   const [refresh, setRefresh] = useState(0)
 
   useEffect(() => {
-    fetch(`${API}/api/me`, { credentials: 'include' })
+    fetch(`${API}/api/me`, { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(data => {
         if (data.username) {
@@ -39,8 +40,14 @@ export default function App() {
   }
 
   function handleLogout() {
-    localStorage.removeItem('username')
-    setUser(null)
+    fetch(`${API}/api/logout`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    }).finally(() => {
+      removeToken()
+      localStorage.removeItem('username')
+      setUser(null)
+    })
   }
 
   function handleLogged() {

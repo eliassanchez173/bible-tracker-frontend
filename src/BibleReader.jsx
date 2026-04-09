@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { getAuthHeaders } from './auth'
 
 const BOOKS = [
   { name: 'Genesis', chapters: 50 }, { name: 'Exodus', chapters: 40 },
@@ -99,8 +100,7 @@ export default function BibleReader({ onLogged }) {
     const today = new Date().toISOString().split('T')[0]
     fetch(`${API}/api/log`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      headers: getAuthHeaders(),
       body: JSON.stringify({ book: book.name, chapter, date: today, notes: '' })
     })
       .then(res => res.json())
@@ -135,7 +135,6 @@ export default function BibleReader({ onLogged }) {
             </label>
           </div>
         </div>
-
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '14px' }}>
           {Array.from({ length: book.chapters }, (_, i) => i + 1).map(num => (
             <button
@@ -160,13 +159,11 @@ export default function BibleReader({ onLogged }) {
       <div className="card">
         {loading && <p style={{ color: 'var(--muted)' }}>Loading...</p>}
         {error && <p className="error">{error}</p>}
-
         {!loading && verses.length > 0 && (
           <>
             <h3 style={{ marginBottom: '16px', color: 'var(--accent)' }}>
               {book.name} {chapter} — {TRANSLATIONS.find(t => t.value === translation)?.label}
             </h3>
-
             <div style={{ lineHeight: '2', fontSize: '16px' }}>
               {verses.map(v => (
                 <span key={v.verse}>
@@ -177,7 +174,6 @@ export default function BibleReader({ onLogged }) {
                 </span>
               ))}
             </div>
-
             <div style={{ marginTop: '32px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
               {chapter > 1 && (
                 <button
@@ -187,7 +183,6 @@ export default function BibleReader({ onLogged }) {
                   ← Previous
                 </button>
               )}
-
               {chapter < book.chapters && (
                 <button
                   onClick={() => goToChapter(chapter + 1)}
@@ -196,7 +191,6 @@ export default function BibleReader({ onLogged }) {
                   Next →
                 </button>
               )}
-
               <button
                 onClick={handleLog}
                 disabled={logged}
@@ -210,7 +204,6 @@ export default function BibleReader({ onLogged }) {
                 {logged ? '✓ Logged' : 'Mark as Read'}
               </button>
             </div>
-
             {logMessage && (
               <p className={logged ? 'success' : 'error'} style={{ marginTop: '8px' }}>
                 {logMessage}

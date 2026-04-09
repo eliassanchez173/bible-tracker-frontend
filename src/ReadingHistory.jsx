@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { getAuthHeaders } from './auth'
 
 const API = import.meta.env.VITE_API_URL || ''
 
@@ -6,7 +7,7 @@ export default function ReadingHistory({ refresh }) {
   const [logs, setLogs] = useState([])
 
   useEffect(() => {
-    fetch(`${API}/api/logs`, { credentials: 'include' })
+    fetch(`${API}/api/logs`, { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setLogs(data)
@@ -16,14 +17,13 @@ export default function ReadingHistory({ refresh }) {
   function handleDelete(id) {
     fetch(`${API}/api/log/${id}`, {
       method: 'DELETE',
-      credentials: 'include'
+      headers: getAuthHeaders()
     })
       .then(res => res.json())
       .then(() => {
         setLogs(logs.filter(log => log.id !== id))
       })
   }
-
 
   if (logs.length === 0) return <p style={{ color: 'var(--muted)' }}>No readings logged yet.</p>
 

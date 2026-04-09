@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { setToken } from './auth'
 
 const API = import.meta.env.VITE_API_URL || ''
 
@@ -11,13 +12,27 @@ export default function Register({ onRegister, switchToLogin }) {
     fetch(`${API}/api/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify({ username, password })
     })
       .then(res => res.json())
       .then(data => {
-        if (data.error) setError(data.error)
-        else onRegister(username)
+        if (data.error) {
+          setError(data.error)
+        } else {
+          // Auto login after register
+          fetch(`${API}/api/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          })
+            .then(res => res.json())
+            .then(loginData => {
+              if (loginData.token) {
+                setToken(loginData.token)
+                onRegister(loginData.username)
+              }
+            })
+        }
       })
   }
 

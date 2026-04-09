@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import '../src/App.css'
-import { TextScramble } from '../src/TextScrable.jsx'
+import { setToken } from './auth'
 
 const API = import.meta.env.VITE_API_URL || ''
 
@@ -13,20 +12,23 @@ export default function Login({ onLogin, switchToRegister }) {
     fetch(`${API}/api/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify({ username, password })
     })
       .then(res => res.json())
       .then(data => {
-        if (data.error) setError(data.error)
-        else onLogin(username)
+        if (data.error) {
+          setError(data.error)
+        } else {
+          setToken(data.token)
+          onLogin(data.username)
+        }
       })
   }
 
   return (
     <div className="auth-wrapper">
       <div className="auth-card">
-      <TextScramble text="WELCOME BACK" />
+        <h2>Welcome Back</h2>
         <p className="subtitle">Sign in to your Bible Tracker</p>
         {error && <p className="error">{error}</p>}
         <label>Username

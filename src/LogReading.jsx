@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { getAuthHeaders } from './auth'
 
 const API = import.meta.env.VITE_API_URL || ''
 
@@ -30,11 +31,9 @@ export default function LogReading({ onLogged }) {
       setMessage('Please enter a chapter number')
       return
     }
-
     fetch(`${API}/api/log`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      headers: getAuthHeaders(),
       body: JSON.stringify({ book, chapter: parseInt(chapter), date, notes })
     })
       .then(res => res.json())

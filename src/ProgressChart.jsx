@@ -9,6 +9,7 @@ import {
   Tooltip,
   Legend
 } from 'chart.js'
+import { getAuthHeaders } from './auth'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
@@ -38,31 +39,26 @@ export default function ProgressChart({ refresh }) {
   const [overallPercent, setOverallPercent] = useState(0)
 
   useEffect(() => {
-    fetch(`${API}/api/progress`, { credentials: 'include' })
+    fetch(`${API}/api/progress`, { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(data => {
         if (!Array.isArray(data) || data.length === 0) return
-
         const totalRead = data.reduce((sum, row) => sum + row.count, 0)
         setOverallPercent(((totalRead / TOTAL_CHAPTERS) * 100).toFixed(1))
-
         const labels = data.map(row => row.book)
         const percentages = data.map(row => {
           const totalInBook = BOOK_CHAPTERS[row.book] || 1
           return ((row.count / totalInBook) * 100).toFixed(1)
         })
-
         setChartData({
           labels,
-          datasets: [
-            {
-              label: '% of Book Read',
-              data: percentages,
-              backgroundColor: 'rgba(56, 189, 248, 0.6)',
-              borderColor: 'rgba(56, 189, 248, 1)',
-              borderWidth: 1
-            }
-          ]
+          datasets: [{
+            label: '% of Book Read',
+            data: percentages,
+            backgroundColor: 'rgba(56, 189, 248, 0.6)',
+            borderColor: 'rgba(56, 189, 248, 1)',
+            borderWidth: 1
+          }]
         })
       })
   }, [refresh])
@@ -91,9 +87,7 @@ export default function ProgressChart({ refresh }) {
             x: {
               beginAtZero: true,
               max: 100,
-              ticks: {
-                callback: value => `${value}%`
-              }
+              ticks: { callback: value => `${value}%` }
             }
           }
         }}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { getAuthHeaders } from './auth'
 
 const API = import.meta.env.VITE_API_URL || ''
 
@@ -6,7 +7,7 @@ export default function StreakDisplay({ refresh }) {
   const [streak, setStreak] = useState(0)
 
   useEffect(() => {
-    fetch(`${API}/api/streak`, { credentials: 'include' })
+    fetch(`${API}/api/streak`, { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(data => {
         if (data.streak !== undefined) setStreak(data.streak)
