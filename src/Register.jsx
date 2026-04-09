@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { setToken } from './auth'
+import './App.css';
 
 const API = import.meta.env.VITE_API_URL || ''
 
@@ -39,18 +40,46 @@ export default function Register({ onRegister, switchToLogin }) {
   return (
     <div className="auth-wrapper">
       <div className="auth-card">
-        <h2>Create Account</h2>
+        <h2 style={{ color: "white" }}>Create Account</h2>
         <p className="subtitle">Start tracking your Bible reading</p>
         {error && <p className="error">{error}</p>}
-        <label>Username
-          <input placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} />
+  
+        <label>
+          Username
+          <input
+            placeholder="Username"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+          />
         </label>
-        <label>Password
-          <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
+  
+        <label>
+          Password
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+          />
         </label>
+  
         <button onClick={handleSubmit}>Register</button>
-        <p className="auth-switch">Already have an account? <span onClick={switchToLogin}>Login</span></p>
+  
+        <div className="auth-switch" style={{ marginTop: "1rem" }}>
+          <p className="text-sm mb-2">Already have an account?</p>
+          <button onClick={switchToLogin} style={{
+            background: "#3b82f6",
+            color: "#fff",
+            padding: "0.5rem 1rem",
+            borderRadius: "0.5rem",
+            border: "none",
+            cursor: "pointer",
+            fontWeight: "bold"
+          }}>
+            Login
+          </button>
+        </div>
       </div>
     </div>
-  )
+  );
 }
