@@ -36,9 +36,30 @@ const BOOKS = [
   { name: '2 John', chapters: 1 }, { name: '3 John', chapters: 1 },
   { name: 'Jude', chapters: 1 }, { name: 'Revelation', chapters: 22 }
 ]
-
+const BOOK_CODES = {
+  'Genesis': 'GEN', 'Exodus': 'EXO', 'Leviticus': 'LEV', 'Numbers': 'NUM',
+  'Deuteronomy': 'DEU', 'Joshua': 'JOS', 'Judges': 'JDG', 'Ruth': 'RUT',
+  '1 Samuel': '1SA', '2 Samuel': '2SA', '1 Kings': '1KI', '2 Kings': '2KI',
+  '1 Chronicles': '1CH', '2 Chronicles': '2CH', 'Ezra': 'EZR', 'Nehemiah': 'NEH',
+  'Esther': 'EST', 'Job': 'JOB', 'Psalms': 'PSA', 'Proverbs': 'PRO',
+  'Ecclesiastes': 'ECC', 'Song of Solomon': 'SNG', 'Isaiah': 'ISA',
+  'Jeremiah': 'JER', 'Lamentations': 'LAM', 'Ezekiel': 'EZK', 'Daniel': 'DAN',
+  'Hosea': 'HOS', 'Joel': 'JOL', 'Amos': 'AMO', 'Obadiah': 'OBA', 'Jonah': 'JON',
+  'Micah': 'MIC', 'Nahum': 'NAM', 'Habakkuk': 'HAB', 'Zephaniah': 'ZEP',
+  'Haggai': 'HAG', 'Zechariah': 'ZEC', 'Malachi': 'MAL', 'Matthew': 'MAT',
+  'Mark': 'MRK', 'Luke': 'LUK', 'John': 'JHN', 'Acts': 'ACT', 'Romans': 'ROM',
+  '1 Corinthians': '1CO', '2 Corinthians': '2CO', 'Galatians': 'GAL',
+  'Ephesians': 'EPH', 'Philippians': 'PHP', 'Colossians': 'COL',
+  '1 Thessalonians': '1TH', '2 Thessalonians': '2TH', '1 Timothy': '1TI',
+  '2 Timothy': '2TI', 'Titus': 'TIT', 'Philemon': 'PHM', 'Hebrews': 'HEB',
+  'James': 'JAS', '1 Peter': '1PE', '2 Peter': '2PE', '1 John': '1JN',
+  '2 John': '2JN', '3 John': '3JN', 'Jude': 'JUD', 'Revelation': 'REV'
+}
 const TRANSLATIONS = [
   { label: 'English Standard Version', value: 'esv' },
+  { label: 'New International Version', value: 'niv' },
+  { label: 'New Living Translation', value: 'nlt' },
+  { label: 'New King James Version', value: 'nkjv' },
   { label: 'King James Version', value: 'kjv' },
   { label: 'American Standard Version', value: 'asv' }
 ]
@@ -71,7 +92,7 @@ export default function BibleReader({ onLogged }) {
     setError('')
     setVerses([])
     setEsvText('')
-
+  
     if (translation === 'esv') {
       fetch(`${API}/get_chapter_text?book=${encodeURIComponent(book.name)}&chapter=${chapter}`)
         .then(res => res.json())
@@ -84,6 +105,21 @@ export default function BibleReader({ onLogged }) {
           setError('Network error. Please try again.')
           setLoading(false)
         })
+  
+    } else if (['niv', 'nlt', 'nkjv'].includes(translation)) {
+      const bookCode = BOOK_CODES[book.name]
+      fetch(`${API}/get_chapter_apibible?book=${bookCode}&chapter=${chapter}&translation=${translation}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) setError('Could not load this chapter.')
+          else setEsvText(data.text)  // reuse esvText state for plain text display
+          setLoading(false)
+        })
+        .catch(() => {
+          setError('Network error. Please try again.')
+          setLoading(false)
+        })
+  
     } else {
       const bookName = book.name.replace(/ /g, '+')
       fetch(`https://bible-api.com/${bookName}+${chapter}?translation=${translation}`)
@@ -181,7 +217,7 @@ export default function BibleReader({ onLogged }) {
         {loading && <p style={{ color: 'var(--muted)' }}>Loading...</p>}
         {error && <p className="error">{error}</p>}
 
-        {!loading && translation === 'esv' && esvText && (
+        {!loading && ['esv', 'niv', 'nlt', 'nkjv'].includes(translation) && esvText && (
           <>
             <h3 style={{ marginBottom: '16px', color: 'var(--accent)' }}>
               {book.name} {chapter} — {translationLabel}
