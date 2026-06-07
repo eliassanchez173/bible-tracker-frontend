@@ -1,86 +1,88 @@
-import { useState, useEffect } from 'react'
-import Login from './Login'
-import Register from './Register'
-import LogReading from './LogReading'
-import ReadingHistory from './ReadingHistory'
-import StreakDisplay from './StreakDisplay'
-import ProgressChart from './ProgressChart'
-import Navbar from './Navbar'
-import BibleReader from './BibleReader'
-import { getAuthHeaders, removeToken } from './auth'
+// src/BibleReader.jsx
+import { useState } from 'react'
+import { getAuthHeaders } from './auth'
 
 const API = import.meta.env.VITE_API_URL || ''
 
-export default function App() {
-  const [user, setUser] = useState(localStorage.getItem('username'))
-  const [loading, setLoading] = useState(true)
-  const [page, setPage] = useState('login')
-  const [view, setView] = useState('log')
-  const [refresh, setRefresh] = useState(0)
+const BOOKS = [
+  'Genesis','Exodus','Leviticus','Numbers','Deuteronomy','Joshua','Judges','Ruth',
+  '1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles','Ezra',
+  'Nehemiah','Esther','Job','Psalms','Proverbs','Ecclesiastes','Song of Solomon',
+  'Isaiah','Jeremiah','Lamentations','Ezekiel','Daniel','Hosea','Joel','Amos',
+  'Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah',
+  'Malachi','Matthew','Mark','Luke','John','Acts','Romans','1 Corinthians',
+  '2 Corinthians','Galatians','Ephesians','Philippians','Colossians',
+  '1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon',
+  'Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude','Revelation'
+]
 
-  useEffect(() => {
-    fetch(`${API}/api/me`, { headers: getAuthHeaders() })
-      .then(res => res.json())
-      .then(data => {
-        if (data.username) {
-          setUser(data.username)
-          localStorage.setItem('username', data.username)
-        } else {
-          setUser(null)
-          localStorage.removeItem('username')
-        }
-        setLoading(false)
-      })
-      .catch(() => setLoading(false))
-  }, [])
+export default function BibleReader({ onLogged }) {
+  const [book, setBook] = useState('John')
+  const [chapter, setChapter] = useState(1)
+  const [text, setText] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [logMessage, setLogMessage] = useState('')
 
-  function handleLogin(username) {
-    localStorage.setItem('username', username)
-    setUser(username)
-  }
-
-  function handleLogout() {
-    fetch(`${API}/api/logout`, {
-      method: 'POST',
-      headers: getAuthHeaders()
-    }).finally(() => {
-      removeToken()
-      localStorage.removeItem('username')
-      setUser(null)
-    })
-  }
-
-  function handleLogged() {
-    setRefresh(r => r + 1)
-    setView('history')
-  }
-
-  if (loading) return <p>Loading...</p>
-
-  if (!user) {
-    if (page === 'login') {
-      return <Login onLogin={handleLogin} switchToRegister={() => setPage('register')} />
+  async function fetchChapter() {
+    setLoading(true)
+    setError('')
+    setText('')
+    setLogMessage('')
+    try {
+      const res = await fetch(`${API}/get_chapter_text?book=${encodeURIComponent(book)}&chapter=${chapter}`)
+      const data = await res.json()
+      if (data.error) setError(data.error)
+      else setText(data.text)
+    } catch {
+      setError('Failed to load chapter.')
     }
-    return <Register onRegister={handleLogin} switchToLogin={() => setPage('login')} />
+    setLoading(false)
+  }
+
+  async function logThisChapter() {
+    const today = new Date().toISOString().split('T')[0]
+    const res = await fetch(`${API}/api/log`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify({ book, chapter, date: today, notes: '' })
+    })
+    const data = await res.json()
+    setLogMessage(data.message || 'Logged!')
+    if (onLogged) onLogged()
   }
 
   return (
-    <div className="app">
-      <Navbar user={user} onLogout={handleLogout} />
-      <div className="tab-nav">
-        <button className={`tab-btn ${view === 'log' ? 'active' : ''}`} onClick={() => setView('log')}>Log Reading</button>
-        <button className={`tab-btn ${view === 'read' ? 'active' : ''}`} onClick={() => setView('read')}>Read</button>
-        <button className={`tab-btn ${view === 'streak' ? 'active' : ''}`} onClick={() => setView('streak')}>Streak</button>
-        <button className={`tab-btn ${view === 'history' ? 'active' : ''}`} onClick={() => setView('history')}>History</button>
-        <button className={`tab-btn ${view === 'progress' ? 'active' : ''}`} onClick={() => setView('progress')}>Progress</button>
+    <div className="bible-reader">
+      <h2>Read a Chapter</h2>
+      <div className="reader-controls">
+        <select value={book} onChange={e => setBook(e.target.value)}>
+          {BOOKS.map(b => <option key={b}>{b}</option>)}
+        </select>
+        <input
+          type="number"
+          min={1}
+          max={150}
+          value={chapter}
+          onChange={e => setChapter(Number(e.target.value))}
+        />
+        <button onClick={fetchChapter}>Load</button>
       </div>
-      <div className="main-content">
-        {view === 'log' && <LogReading onLogged={handleLogged} />}
-        {view === 'read' && <BibleReader onLogged={handleLogged} />}
-        {view === 'streak' && <StreakDisplay refresh={refresh} />}
-        {view === 'history' && <ReadingHistory refresh={refresh} />}
-        {view === 'progress' && <ProgressChart refresh={refresh} />}
-      </div>
+
+      {loading && <p>Loading...</p>}
+      {error && <p className="error">{error}</p>}
+
+      {text && (
+        <>
+          <div className="chapter-text" style={{ whiteSpace: 'pre-wrap', fontFamily: 'Georgia, serif', lineHeight: '1.9', marginTop: '1rem' }}>
+            {text}
+          </div>
+          <button onClick={logThisChapter} style={{ marginTop: '1rem' }}>
+            ✅ Mark as Read
+          </button>
+          {logMessage && <p style={{ color: 'green' }}>{logMessage}</p>}
+        </>
+      )}
     </div>
   )
 }
