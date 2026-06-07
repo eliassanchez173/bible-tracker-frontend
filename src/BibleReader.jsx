@@ -38,6 +38,7 @@ const BOOKS = [
 ]
 
 const TRANSLATIONS = [
+  { label: 'English Standard Version', value: 'esv' },
   { label: 'King James Version', value: 'kjv' },
   { label: 'American Standard Version', value: 'asv' }
 ]
@@ -47,8 +48,9 @@ const API = import.meta.env.VITE_API_URL || ''
 export default function BibleReader({ onLogged }) {
   const [book, setBook] = useState(BOOKS[0])
   const [chapter, setChapter] = useState(1)
-  const [translation, setTranslation] = useState('kjv')
+  const [translation, setTranslation] = useState('esv')
   const [verses, setVerses] = useState([])
+  const [esvText, setEsvText] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [logged, setLogged] = useState(false)
@@ -68,21 +70,34 @@ export default function BibleReader({ onLogged }) {
     setLoading(true)
     setError('')
     setVerses([])
-    const bookName = book.name.replace(/ /g, '+')
-    fetch(`https://bible-api.com/${bookName}+${chapter}?translation=${translation}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.error) {
-          setError('Could not load this chapter.')
-        } else {
-          setVerses(data.verses)
-        }
-        setLoading(false)
-      })
-      .catch(() => {
-        setError('Network error. Please try again.')
-        setLoading(false)
-      })
+    setEsvText('')
+
+    if (translation === 'esv') {
+      fetch(`${API}/get_chapter_text?book=${encodeURIComponent(book.name)}&chapter=${chapter}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) setError('Could not load this chapter.')
+          else setEsvText(data.text)
+          setLoading(false)
+        })
+        .catch(() => {
+          setError('Network error. Please try again.')
+          setLoading(false)
+        })
+    } else {
+      const bookName = book.name.replace(/ /g, '+')
+      fetch(`https://bible-api.com/${bookName}+${chapter}?translation=${translation}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) setError('Could not load this chapter.')
+          else setVerses(data.verses)
+          setLoading(false)
+        })
+        .catch(() => {
+          setError('Network error. Please try again.')
+          setLoading(false)
+        })
+    }
   }
 
   function handleBookChange(e) {
@@ -114,6 +129,8 @@ export default function BibleReader({ onLogged }) {
         }
       })
   }
+
+  const translationLabel = TRANSLATIONS.find(t => t.value === translation)?.label
 
   return (
     <div ref={topRef}>
@@ -159,10 +176,22 @@ export default function BibleReader({ onLogged }) {
       <div className="card">
         {loading && <p style={{ color: 'var(--muted)' }}>Loading...</p>}
         {error && <p className="error">{error}</p>}
-        {!loading && verses.length > 0 && (
+
+        {!loading && translation === 'esv' && esvText && (
           <>
             <h3 style={{ marginBottom: '16px', color: 'var(--accent)' }}>
-              {book.name} {chapter} — {TRANSLATIONS.find(t => t.value === translation)?.label}
+              {book.name} {chapter} — {translationLabel}
+            </h3>
+            <div style={{ whiteSpace: 'pre-wrap', lineHeight: '2', fontSize: '16px' }}>
+              {esvText}
+            </div>
+          </>
+        )}
+
+        {!loading && translation !== 'esv' && verses.length > 0 && (
+          <>
+            <h3 style={{ marginBottom: '16px', color: 'var(--accent)' }}>
+              {book.name} {chapter} — {translationLabel}
             </h3>
             <div style={{ lineHeight: '2', fontSize: '16px' }}>
               {verses.map(v => (
@@ -174,42 +203,45 @@ export default function BibleReader({ onLogged }) {
                 </span>
               ))}
             </div>
-            <div style={{ marginTop: '32px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-              {chapter > 1 && (
-                <button
-                  onClick={() => goToChapter(chapter - 1)}
-                  style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text)' }}
-                >
-                  ← Previous
-                </button>
-              )}
-              {chapter < book.chapters && (
-                <button
-                  onClick={() => goToChapter(chapter + 1)}
-                  style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text)' }}
-                >
-                  Next →
-                </button>
-              )}
-              <button
-                onClick={handleLog}
-                disabled={logged}
-                style={{
-                  marginLeft: 'auto',
-                  background: logged ? 'transparent' : 'var(--accent)',
-                  border: logged ? '1px solid var(--border)' : 'none',
-                  color: logged ? 'var(--success)' : '#0f172a'
-                }}
-              >
-                {logged ? '✓ Logged' : 'Mark as Read'}
-              </button>
-            </div>
-            {logMessage && (
-              <p className={logged ? 'success' : 'error'} style={{ marginTop: '8px' }}>
-                {logMessage}
-              </p>
-            )}
           </>
+        )}
+
+        {!loading && (esvText || verses.length > 0) && (
+          <div style={{ marginTop: '32px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+            {chapter > 1 && (
+              <button
+                onClick={() => goToChapter(chapter - 1)}
+                style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text)' }}
+              >
+                ← Previous
+              </button>
+            )}
+            {chapter < book.chapters && (
+              <button
+                onClick={() => goToChapter(chapter + 1)}
+                style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text)' }}
+              >
+                Next →
+              </button>
+            )}
+            <button
+              onClick={handleLog}
+              disabled={logged}
+              style={{
+                marginLeft: 'auto',
+                background: logged ? 'transparent' : 'var(--accent)',
+                border: logged ? '1px solid var(--border)' : 'none',
+                color: logged ? 'var(--success)' : '#0f172a'
+              }}
+            >
+              {logged ? '✓ Logged' : 'Mark as Read'}
+            </button>
+          </div>
+        )}
+        {logMessage && (
+          <p className={logged ? 'success' : 'error'} style={{ marginTop: '8px' }}>
+            {logMessage}
+          </p>
         )}
       </div>
     </div>
