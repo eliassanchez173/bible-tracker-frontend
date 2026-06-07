@@ -125,7 +125,11 @@ export default function BibleReader({ onLogged }) {
         } else {
           setLogged(true)
           setLogMessage('Chapter logged!')
-          if (onLogged) onLogged()
+          setTimeout(() => {
+          if (chapter < book.chapters) {
+            goToChapter(chapter + 1)
+          }
+        }, 800)
         }
       })
   }
